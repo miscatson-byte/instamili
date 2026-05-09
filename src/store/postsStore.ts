@@ -5,7 +5,10 @@ interface Post {
   id: string
   user_id: string
   image_url: string
+  video_url?: string
   caption: string
+  hashtags: string[]
+  location?: string
   likes_count: number
   comments_count: number
   created_at: string
@@ -17,123 +20,103 @@ interface Post {
 
 interface PostsState {
   posts: Post[]
+  reels: Post[]
   isLoading: boolean
   
   fetchPosts: () => Promise<void>
-  createPost: (imageFile: File, caption: string) => Promise<void>
+  fetchReels: () => Promise<void>
+  createPost: (file: File, caption: string, hashtags: string[], location?: string, isVideo?: boolean) => Promise<void>
   likePost: (postId: string) => Promise<void>
   unlikePost: (postId: string) => Promise<void>
   addComment: (postId: string, content: string) => Promise<void>
+  searchByHashtag: (hashtag: string) => Promise<Post[]>
 }
 
 export const usePostsStore = create<PostsState>((set, get) => ({
   posts: [],
+  reels: [],
   isLoading: false,
 
   fetchPosts: async () => {
     set({ isLoading: true })
-    
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('posts')
-      .select(`
-        *,
-        user:users(username, avatar_url)
-      `)
+      .select(`*, user:users(username, avatar_url)`)
+      .is('video_url', null) // Sirf images
       .order('created_at', { ascending: false })
-
-    if (!error && data) {
-      set({ posts: data })
-    }
     
-    set({ isLoading: false })
+    set({ posts: data || [], isLoading: false })
   },
 
-  createPost: async (imageFile, caption) => {
+  fetchReels: async () => {
+    set({ isLoading: true })
+    const { data } = await supabase
+      .from('posts')
+      .select(`*, user:users(username, avatar_url)`)
+      .not('video_url', 'is', null) // Sirf videos
+      .order('created_at', { ascending: false })
+    
+    set({ reels: data || [], isLoading: false })
+  },
+
+  createPost: async (file, caption, hashtags, location, isVideo = false) => {
     const user = (await supabase.auth.getUser()).data.user
     if (!user) throw new Error('Not authenticated')
 
-    // 1. Upload image to Supabase Storage
-    const fileExt = imageFile.name.split('.').pop()
+    const bucket = isVideo ? 'videos' : 'posts'
+    const fileExt = file.name.split('.').pop()
     const fileName = `${user.id}-${Date.now()}.${fileExt}`
     
-    const { error: uploadError, data: uploadData } = await supabase.storage
-      .from('posts')
-      .upload(fileName, imageFile)
+    // Upload file
+    await supabase.storage.from(bucket).upload(fileName, file)
+    const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(fileName)
 
-    if (uploadError) throw uploadError
+    // Insert post
+    const insertData: any = {
+      user_id: user.id,
+      caption,
+      hashtags,
+      location,
+    }
 
-    // 2. Get public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from('posts')
-      .getPublicUrl(fileName)
+    if (isVideo) {
+      insertData.video_url = publicUrl
+    } else {
+      insertData.image_url = publicUrl
+    }
 
-    // 3. Create post in database
-    const { error } = await supabase
-      .from('posts')
-      .insert({
-        user_id: user.id,
-        image_url: publicUrl,
-        caption,
-      })
-
+    const { error } = await supabase.from('posts').insert(insertData)
     if (error) throw error
     
-    // 4. Refresh posts
     await get().fetchPosts()
+    if (isVideo) await get().fetchReels()
   },
 
   likePost: async (postId) => {
     const user = (await supabase.auth.getUser()).data.user
-    if (!user) throw new Error('Not authenticated')
-
-    const { error } = await supabase
-      .from('likes')
-      .insert({ user_id: user.id, post_id: postId })
-
-    if (error) throw error
+    if (!user) return
+    await supabase.from('likes').insert({ user_id: user.id, post_id: postId })
   },
 
   unlikePost: async (postId) => {
     const user = (await supabase.auth.getUser()).data.user
-    if (!user) throw new Error('Not authenticated')
-
-    const { error } = await supabase
-      .from('likes')
-      .delete()
-      .eq('user_id', user.id)
-      .eq('post_id', postId)
-
-    if (error) throw error
+    if (!user) return
+    await supabase.from('likes').delete().eq('user_id', user.id).eq('post_id', postId)
   },
 
   addComment: async (postId, content) => {
     const user = (await supabase.auth.getUser()).data.user
-    if (!user) throw new Error('Not authenticated')
-
-    const { error } = await supabase
-      .from('comments')
-      .insert({
-        user_id: user.id,
-        post_id: postId,
-        content,
-      })
-
-    if (error) throw error
+    if (!user) return
+    await supabase.from('comments').insert({ user_id: user.id, post_id: postId, content })
   },
 
-  // Real-time subscription for posts
-subscribeToRealtime: () => {
-  const subscription = supabase
-    .channel('posts')
-    .on('postgres_changes', { 
-      event: '*', 
-      schema: 'public', 
-      table: 'posts' 
-    }, () => {
-      get().fetchPosts()
-    })
-    .subscribe()
-
-  return () => subscription.unsubscribe()
-},
+  searchByHashtag: async (hashtag) => {
+    const { data } = await supabase
+      .from('posts')
+      .select(`*, user:users(username, avatar_url)`)
+      .contains('hashtags', [hashtag])
+      .order('created_at', { ascending: false })
+    
+    return data || []
+  }
 }))
