@@ -120,4 +120,20 @@ export const usePostsStore = create<PostsState>((set, get) => ({
 
     if (error) throw error
   },
+
+  // Real-time subscription for posts
+subscribeToRealtime: () => {
+  const subscription = supabase
+    .channel('posts')
+    .on('postgres_changes', { 
+      event: '*', 
+      schema: 'public', 
+      table: 'posts' 
+    }, () => {
+      get().fetchPosts()
+    })
+    .subscribe()
+
+  return () => subscription.unsubscribe()
+},
 }))
