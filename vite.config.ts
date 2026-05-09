@@ -43,5 +43,10 @@ export default defineConfig(async () => {
     plugins.push(m.sourceTags());
   } catch {}
   
-  return { plugins };
-})
+  return {
+    plugins,
+    build: {
+      chunkSizeWarningLimit: 1000, // ✅ 1000kb limit
+    }
+  };
+});
