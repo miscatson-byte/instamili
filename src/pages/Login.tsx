@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 
 export default function Login() {
@@ -9,7 +9,6 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   
   const { signIn } = useAuthStore()
-  const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -18,8 +17,8 @@ export default function Login() {
 
     try {
       await signIn(email, password)
-      // State update ke baad navigate karein
-      navigate('/', { replace: true })
+      // Force reload to home page
+      window.location.replace('/')
     } catch (err: any) {
       setError(err.message || 'Login failed')
     } finally {

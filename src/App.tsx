@@ -39,9 +39,18 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/" element={isAuthenticated ? <Layout /> : <Navigate to="/login" />}>
+        <Route 
+          path="/login" 
+          element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} 
+        />
+        <Route 
+          path="/signup" 
+          element={isAuthenticated ? <Navigate to="/" replace /> : <Signup />} 
+        />
+        <Route 
+          path="/" 
+          element={isAuthenticated ? <Layout /> : <Navigate to="/login" replace />}
+        >
           <Route index element={<Home />} />
           <Route path="explore" element={<Explore />} />
           <Route path="reels" element={<Reels />} />

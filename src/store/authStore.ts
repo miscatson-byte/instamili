@@ -6,6 +6,7 @@ interface AuthState {
   profile: any | null
   isLoading: boolean
   isAuthenticated: boolean
+
   setUser: (user: any) => void
   setProfile: (profile: any) => void
   signUp: (email: string, password: string, username: string, fullName: string) => Promise<any>
@@ -24,6 +25,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setProfile: (profile) => set({ profile }),
 
   signUp: async (email, password, username, fullName) => {
+    // Sirf auth signup - trigger users table mein auto insert karega
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
@@ -34,9 +36,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
       }
     })
-    
+
     if (authError) throw authError
-    
+
     return authData
   },
 
@@ -45,18 +47,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       email,
       password,
     })
-    
+
     if (error) throw error
-    
+
+    // Pehle user set karein
     set({ user: data.user, isAuthenticated: true })
-    
-    // Profile fetch ko try-catch mein rakhein - agar fail bhi ho toh login successful rahe
+
+    // Phir profile fetch karein (agar fail bhi ho toh koi problem nahi)
     try {
       await get().fetchProfile()
     } catch (profileErr) {
       console.warn('Profile fetch failed:', profileErr)
     }
-    
+
     return data
   },
 
@@ -73,7 +76,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       .from('users')
       .select('*')
       .eq('id', user.id)
-      .maybeSingle() // .single() ki jagah .maybeSingle() use karein
+      .maybeSingle()
 
     if (error) {
       console.warn('Profile fetch error:', error.message)
