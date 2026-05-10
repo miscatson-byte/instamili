@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import { useAuthStore } from './store/authStore'
 import Layout from './components/Layout'
@@ -10,47 +10,47 @@ import Messages from './pages/Messages'
 import Notifications from './pages/Notifications'
 import CreatePost from './pages/CreatePost'
 import Profile from './pages/Profile'
-import Login from './pages/Login'
-import Signup from './pages/Signup'
+
+// Guest user mock data — bina login ke dashboard dikhega
+const GUEST_USER = {
+  id: 'guest-user-id',
+  email: 'guest@instamili.com',
+  user_metadata: { username: 'guest_user', full_name: 'Guest User' }
+}
+
+const GUEST_PROFILE = {
+  id: 'guest-user-id',
+  username: 'guest_user',
+  full_name: 'Guest User',
+  email: 'guest@instamili.com',
+  avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=guest',
+  bio: 'Welcome to Instamili! 👋',
+  followers: 0,
+  following: 0,
+  created_at: new Date().toISOString()
+}
 
 function App() {
-  const { setUser, fetchProfile, isAuthenticated } = useAuthStore()
+  const { setUser, setProfile } = useAuthStore()
 
   useEffect(() => {
+    // Check real session first
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         setUser(session.user)
-        fetchProfile()
-      }
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setUser(session.user)
-        fetchProfile()
       } else {
-        setUser(null)
+        // No session? Set guest user — bina login ke app chalega
+        setUser(GUEST_USER)
+        setProfile(GUEST_PROFILE)
       }
     })
-
-    return () => subscription.unsubscribe()
   }, [])
 
   return (
     <BrowserRouter>
       <Routes>
-        <Route 
-          path="/login" 
-          element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} 
-        />
-        <Route 
-          path="/signup" 
-          element={isAuthenticated ? <Navigate to="/" replace /> : <Signup />} 
-        />
-        <Route 
-          path="/" 
-          element={isAuthenticated ? <Layout /> : <Navigate to="/login" replace />}
-        >
+        {/* Main app — always accessible, no login required */}
+        <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="explore" element={<Explore />} />
           <Route path="reels" element={<Reels />} />

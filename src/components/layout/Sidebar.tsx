@@ -15,11 +15,9 @@ import {
   Sun,
   Flag,
   HelpCircle,
-  LogOut,
   X
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
-import { useAppStore } from '../../store/useAppStore';
 
 const navItems = [
   { icon: Home, label: 'Home', path: '/' },
@@ -34,7 +32,6 @@ const navItems = [
 export default function Sidebar() {
   const [showMore, setShowMore] = useState(false);
   const { theme, toggleTheme } = useTheme();
-  const { signOut } = useAppStore();
   const navigate = useNavigate();
 
   const isDark = theme === 'dark';
@@ -51,18 +48,13 @@ export default function Sidebar() {
     { icon: HelpCircle, label: 'Help', action: () => alert('Help center coming soon!') },
   ];
 
-  const handleLogout = () => {
-    signOut();
-    navigate('/login');
-  };
-
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-black z-50 flex flex-col">
       <div className="p-6 pt-8">
         <h1 className="text-2xl font-bold tracking-tight cursor-pointer bg-gradient-to-r from-[#f09433] via-[#e6683c] via-[#dc2743] via-[#cc2366] to-[#bc1888] bg-clip-text text-transparent" 
-  onClick={() => navigate('/')} 
->
-  Instamili
+          onClick={() => navigate('/')} 
+        >
+          Instamili
         </h1>
       </div>
 
@@ -117,18 +109,7 @@ export default function Sidebar() {
                   <span className="text-sm">{item.label}</span>
                 </button>
               ))}
-              <div className="border-t border-gray-200 dark:border-gray-800 mt-2 pt-2">
-                <button
-                  onClick={() => {
-                    handleLogout();
-                    setShowMore(false);
-                  }}
-                  className="flex items-center gap-3 px-4 py-3 w-full hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors text-left text-red-500"
-                >
-                  <LogOut className="w-5 h-5" />
-                  <span className="text-sm">Log Out</span>
-                </button>
-              </div>
+              {/* LogOut button temporarily removed for guest mode */}
             </div>
           )}
         </div>
