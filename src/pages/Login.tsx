@@ -18,7 +18,8 @@ export default function Login() {
 
     try {
       await signIn(email, password)
-      navigate('/')
+      // State update ke baad navigate karein
+      navigate('/', { replace: true })
     } catch (err: any) {
       setError(err.message || 'Login failed')
     } finally {

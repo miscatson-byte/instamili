@@ -251,16 +251,16 @@ export const useAppStore = create<AppState>()(
       },
 
       signUpSupabase: async (email, password, username) => {
-        const { data, error } = await supabase.auth.signUp({ email, password });
-        if (!error && data.user) {
-          await supabase.from('profiles').insert([{
-            id: data.user.id,
-            username,
-            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`,
-          }]);
-        }
+        const { data, error } = await supabase.auth.signUp({ 
+          email, 
+          password,
+          options: {
+            data: { username }
+          }
+        });
         return { data, error };
       },
+
 
       signInSupabase: async (email, password) => {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });

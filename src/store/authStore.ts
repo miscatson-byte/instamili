@@ -6,8 +6,6 @@ interface AuthState {
   profile: any | null
   isLoading: boolean
   isAuthenticated: boolean
-  
-  // Actions
   setUser: (user: any) => void
   setProfile: (profile: any) => void
   signUp: (email: string, password: string, username: string, fullName: string) => Promise<any>
@@ -26,26 +24,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setProfile: (profile) => set({ profile }),
 
   signUp: async (email, password, username, fullName) => {
-    // 1. Create auth user
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          username,
+          full_name: fullName,
+        }
+      }
     })
     
     if (authError) throw authError
-    
-    // 2. Create user profile in users table
-    const { error: profileError } = await supabase
-      .from('users')
-      .insert({
-        id: authData.user!.id,
-        email,
-        username,
-        full_name: fullName,
-        avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`,
-      })
-    
-    if (profileError) throw profileError
     
     return authData
   },
@@ -59,7 +49,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (error) throw error
     
     set({ user: data.user, isAuthenticated: true })
-    await get().fetchProfile()
+    
+    // Profile fetch ko try-catch mein rakhein - agar fail bhi ho toh login successful rahe
+    try {
+      await get().fetchProfile()
+    } catch (profileErr) {
+      console.warn('Profile fetch failed:', profileErr)
+    }
     
     return data
   },
@@ -77,9 +73,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       .from('users')
       .select('*')
       .eq('id', user.id)
-      .single()
+      .maybeSingle() // .single() ki jagah .maybeSingle() use karein
 
-    if (!error && data) {
+    if (error) {
+      console.warn('Profile fetch error:', error.message)
+      set({ profile: null })
+      return
+    }
+
+    if (data) {
       set({ profile: data })
     }
   }
