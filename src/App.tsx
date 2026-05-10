@@ -17,7 +17,6 @@ function App() {
   const { setUser, fetchProfile, isAuthenticated } = useAuthStore()
 
   useEffect(() => {
-    // Check active session on app start
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         setUser(session.user)
@@ -25,7 +24,6 @@ function App() {
       }
     })
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         setUser(session.user)
@@ -41,8 +39,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/" />} />
-        <Route path="/signup" element={!isAuthenticated ? <Signup /> : <Navigate to="/" />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
         <Route path="/" element={isAuthenticated ? <Layout /> : <Navigate to="/login" />}>
           <Route index element={<Home />} />
           <Route path="explore" element={<Explore />} />
@@ -51,7 +49,6 @@ function App() {
           <Route path="notifications" element={<Notifications />} />
           <Route path="create" element={<CreatePost />} />
           <Route path="profile" element={<Profile />} />
-          <Route path="profile/:username" element={<Profile />} />
         </Route>
       </Routes>
     </BrowserRouter>

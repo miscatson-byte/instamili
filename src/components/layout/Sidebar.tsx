@@ -33,17 +33,19 @@ const navItems = [
 
 export default function Sidebar() {
   const [showMore, setShowMore] = useState(false);
-  const { darkMode, toggleDarkMode } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   const { signOut } = useAppStore();
   const navigate = useNavigate();
+
+  const isDark = theme === 'dark';
 
   const moreItems = [
     { icon: Settings, label: 'Settings', action: () => alert('Settings coming soon!') },
     { icon: Bookmark, label: 'Saved', action: () => alert('Saved posts coming soon!') },
     { 
-      icon: darkMode ? Sun : Moon, 
-      label: darkMode ? 'Light Mode' : 'Dark Mode', 
-      action: toggleDarkMode 
+      icon: isDark ? Sun : Moon, 
+      label: isDark ? 'Light Mode' : 'Dark Mode', 
+      action: toggleTheme 
     },
     { icon: Flag, label: 'Report a Problem', action: () => alert('Report feature coming soon!') },
     { icon: HelpCircle, label: 'Help', action: () => alert('Help center coming soon!') },
