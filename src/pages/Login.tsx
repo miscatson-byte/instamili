@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 
 export default function Login() {
@@ -7,8 +7,9 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  
+
   const { signIn } = useAuthStore()
+  const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -17,8 +18,8 @@ export default function Login() {
 
     try {
       await signIn(email, password)
-      // Force reload to home page
-      window.location.replace('/')
+      // Force redirect with reload to ensure auth state is picked up
+      window.location.href = '/'
     } catch (err: any) {
       setError(err.message || 'Login failed')
     } finally {
@@ -32,7 +33,7 @@ export default function Login() {
         <h1 className="text-4xl font-bold text-center mb-8 bg-gradient-to-r from-orange-500 to-pink-500 bg-clip-text text-transparent">
           Instamili
         </h1>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="email"
@@ -42,7 +43,7 @@ export default function Login() {
             className="w-full px-4 py-3 border rounded-lg dark:bg-gray-900 dark:border-gray-700"
             required
           />
-          
+
           <input
             type="password"
             placeholder="Password"
@@ -51,11 +52,11 @@ export default function Login() {
             className="w-full px-4 py-3 border rounded-lg dark:bg-gray-900 dark:border-gray-700"
             required
           />
-          
+
           {error && (
             <p className="text-red-500 text-sm">{error}</p>
           )}
-          
+
           <button
             type="submit"
             disabled={loading}
