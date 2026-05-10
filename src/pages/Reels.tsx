@@ -24,7 +24,7 @@ export default function Reels() {
         >
           {/* Video */}
           <video
-            ref={el => videoRefs.current[index] = el}
+            ref={el => { videoRefs.current[index] = el; }}
             src={reel.video_url}
             className="w-full h-full object-cover"
             loop
